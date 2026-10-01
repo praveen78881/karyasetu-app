@@ -1469,7 +1469,7 @@
     }, 30000);
 
     if ('serviceWorker' in navigator) {
-      0;
+      navigator.serviceWorker.register('sw.js').catch(() => {});
     }
   }
 
