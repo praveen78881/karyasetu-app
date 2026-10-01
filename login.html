@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sign in · KaryaSetu</title>
+  <meta name="theme-color" content="#1A2E5A">
+  <link rel="manifest" href="static/manifest.webmanifest">
+  <link rel="icon" href="static/icons/favicon.png">
+  <link rel="apple-touch-icon" href="static/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="static/css/fonts.css">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="ks-shim.js"></script>
+</head>
+<body class="login-body">
+  <main class="login-wrap">
+    <section class="login-brand">
+      <div class="login-brand-inner">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="52" height="52">
+            <rect width="48" height="48" rx="11" fill="#1A2E5A"/>
+            <path d="M12 30a12 9.5 0 0 1 24 0" fill="none" stroke="#E8A33D" stroke-width="3.2" stroke-linecap="round"/>
+            <line x1="9.5" y1="30" x2="38.5" y2="30" stroke="#FAF7F2" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="24" cy="14.5" r="2.6" fill="#E8A33D"/>
+          </svg>
+        </div>
+        <h1 class="brand-word">Karya<span>Setu</span></h1>
+        <p class="brand-tag">The bridge between your team and its work</p>
+        <ul class="brand-points">
+          <li>Assign &amp; track tasks across your team</li>
+          <li>Task-linked messaging that stays organised</li>
+          <li>Works offline — syncs the moment you're back</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form id="login-form" class="login-card" autocomplete="on">
+        <h2>Sign in</h2>
+        <p class="login-sub">Welcome back. Enter your work credentials.</p>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="username"
+                 placeholder="you@company.com" inputmode="email">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" required autocomplete="current-password"
+                 placeholder="••••••••">
+        </label>
+        <label class="field">
+          <span>Enter role</span>
+          <input type="text" name="role" required autocomplete="off"
+                 spellcheck="false" placeholder="e.g. Manager, Developer, Designer">
+        </label>
+        <p id="login-error" class="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign in</button>
+        <p class="login-alt">Have a join code?
+          <button type="button" id="show-join" class="linklike">Join your team</button></p>
+        <p class="login-alt">Starting a new company?
+          <a class="linklike" href="setup.html">Create a company</a></p>
+      </form>
+
+      <form id="join-form" class="login-card" autocomplete="on" hidden>
+        <h2>Join your team</h2>
+        <p class="login-sub">Create your account using the join code from your manager.</p>
+        <label class="field">
+          <span>Full name</span>
+          <input name="name" required maxlength="120" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="username"
+                 placeholder="you@company.com" inputmode="email">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" required minlength="6"
+                 autocomplete="new-password" placeholder="At least 6 characters">
+        </label>
+        <label class="field">
+          <span>Select role</span>
+          <select name="role">
+            <option value="member" selected>Employee</option>
+            <option value="manager">Manager / CEO</option>
+          </select>
+          <small class="field-hint">A manager reviews and confirms your role
+            before your account is activated.</small>
+        </label>
+        <label class="field">
+          <span>Join code</span>
+          <input name="code" required autocomplete="off" spellcheck="false"
+                 placeholder="e.g. WH-4X7K2" style="text-transform:uppercase">
+        </label>
+        <p id="join-error" class="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block" id="join-btn">Create account &amp; join</button>
+        <p class="login-alt">Already have an account?
+          <button type="button" id="show-login" class="linklike">Sign in</button></p>
+      </form>
+      <p class="login-foot">KaryaSetu · Private team workspace</p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const err = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-KS': '1' },
+          body: JSON.stringify({ email: form.email.value, password: form.password.value,
+                                 role: form.role.value })
+        });
+        if (res.ok) {
+          location.href = 'index.html';
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) {
+          err.textContent = 'Too many failed attempts. Please try again in 15 minutes.';
+        } else if (res.status === 403 && data.error === 'pending_approval') {
+          err.textContent = data.detail ||
+            'Your account is waiting for a manager to approve it.';
+        } else if (res.status === 401) {
+          err.textContent = 'Incorrect email or password.';
+        } else {
+          err.textContent = 'Could not sign in. Please try again.';
+        }
+        err.hidden = false;
+      } catch {
+        err.textContent = navigator.onLine
+          ? 'Could not reach the server. Is it running?'
+          : 'You are offline. Connect to the internet to sign in.';
+        err.hidden = false;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    });
+
+    // Join-your-team flow
+    const joinForm = document.getElementById('join-form');
+    const joinErr = document.getElementById('join-error');
+    const joinBtn = document.getElementById('join-btn');
+    document.getElementById('show-join').addEventListener('click', () => {
+      form.hidden = true;
+      joinForm.hidden = false;
+      joinForm.name.focus();
+    });
+    document.getElementById('show-login').addEventListener('click', () => {
+      joinForm.hidden = true;
+      form.hidden = false;
+    });
+
+    joinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      joinErr.hidden = true;
+      joinBtn.disabled = true;
+      joinBtn.textContent = 'Creating account…';
+      try {
+        const res = await fetch('/api/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-KS': '1' },
+          body: JSON.stringify({
+            name: joinForm.name.value, email: joinForm.email.value,
+            password: joinForm.password.value, code: joinForm.code.value,
+            role: joinForm.role.value,
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          // Account is created but PENDING a manager's approval — don't sign in.
+          const company = data.company ? String(data.company) : 'your team';
+          joinForm.innerHTML =
+            '<h2>Request sent</h2>' +
+            '<p class="login-sub">Your request to join <b>' +
+            company.replace(/</g, '&lt;') + '</b> has been sent to the ' +
+            'manager. You’ll be able to sign in as soon as they approve you.</p>' +
+            '<button type="button" class="btn btn-primary btn-block" ' +
+            'id="back-to-login">Back to sign in</button>';
+          document.getElementById('back-to-login').addEventListener('click', () => {
+            location.reload();
+          });
+          return;
+        }
+        if (res.status === 403 && data.error === 'bad_code') {
+          joinErr.textContent = 'Incorrect join code. Please check it with your manager.';
+        } else if (res.status === 429) {
+          joinErr.textContent = 'Too many attempts. Please try again in 15 minutes.';
+        } else {
+          joinErr.textContent = data.detail || 'Could not create the account. Please try again.';
+        }
+        joinErr.hidden = false;
+      } catch {
+        joinErr.textContent = navigator.onLine
+          ? 'Could not reach the server. Please try again.'
+          : 'You are offline. Connect to the internet to join.';
+        joinErr.hidden = false;
+      }
+      joinBtn.disabled = false;
+      joinBtn.textContent = 'Create account & join';
+    });
+
+    if ('serviceWorker' in navigator) {
+      0;
+    }
+  </script>
+</body>
+</html>

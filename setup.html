@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Set up · KaryaSetu</title>
+  <meta name="theme-color" content="#1A2E5A">
+  <link rel="manifest" href="static/manifest.webmanifest">
+  <link rel="icon" href="static/icons/favicon.png">
+  <link rel="apple-touch-icon" href="static/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="static/css/fonts.css">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script src="ks-shim.js"></script>
+</head>
+<body class="login-body">
+  <main class="login-wrap">
+    <section class="login-brand">
+      <div class="login-brand-inner">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="52" height="52">
+            <rect width="48" height="48" rx="11" fill="#1A2E5A"/>
+            <path d="M12 30a12 9.5 0 0 1 24 0" fill="none" stroke="#E8A33D" stroke-width="3.2" stroke-linecap="round"/>
+            <line x1="9.5" y1="30" x2="38.5" y2="30" stroke="#FAF7F2" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="24" cy="14.5" r="2.6" fill="#E8A33D"/>
+          </svg>
+        </div>
+        <h1 class="brand-word">Karya<span>Setu</span></h1>
+        <p class="brand-tag">The bridge between your team and its work</p>
+        <ul class="brand-points">
+          <li>Assign &amp; track tasks across your team</li>
+          <li>Task-linked messaging that stays organised</li>
+          <li>Works offline — syncs the moment you're back</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form id="setup-form" class="login-card" autocomplete="on">
+        <h2>Create your company</h2>
+        <p class="login-sub">Set up your company and its manager account. You can add team members afterwards from the Team page.</p>
+        <label class="field">
+          <span>Company name *</span>
+          <input name="company" required maxlength="160" placeholder="e.g. Acme Pvt Ltd" autocomplete="organization">
+        </label>
+        <label class="field">
+          <span>Your full name *</span>
+          <input name="name" required maxlength="120" placeholder="Enter your full name" autocomplete="name">
+        </label>
+        <label class="field">
+          <span>Work email *</span>
+          <input type="email" name="email" required autocomplete="username" placeholder="you@company.com" inputmode="email">
+        </label>
+        <label class="field">
+          <span>Password *</span>
+          <input type="password" name="password" required minlength="6" autocomplete="new-password" placeholder="At least 6 characters">
+        </label>
+        <label class="field">
+          <span>Job title (optional)</span>
+          <input name="title" maxlength="120" placeholder="e.g. Team Lead">
+        </label>
+        <p id="setup-error" class="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block" id="setup-btn">Create company</button>
+        <p class="login-alt">Already have an account?
+          <a class="linklike" href="login.html">Sign in</a></p>
+      </form>
+      <p class="login-foot">KaryaSetu · Private team workspace</p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('setup-form');
+    const err = document.getElementById('setup-error');
+    const btn = document.getElementById('setup-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      btn.disabled = true;
+      btn.textContent = 'Creating…';
+      try {
+        const res = await fetch('/api/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-KS': '1' },
+          body: JSON.stringify({
+            company: form.company.value, name: form.name.value,
+            email: form.email.value, password: form.password.value,
+            title: form.title.value,
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) { location.href = 'index.html'; return; }
+        err.textContent = data.detail || (res.status === 409
+          ? 'That email is already registered. Please sign in.'
+          : 'Could not create the company. Please try again.');
+        err.hidden = false;
+      } catch {
+        err.textContent = 'Could not reach the server. Is it running?';
+        err.hidden = false;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Create company';
+    });
+
+    if ('serviceWorker' in navigator) {
+      0;
+    }
+  </script>
+</body>
+</html>
