@@ -88,7 +88,33 @@
           })
         });
         const data = await res.json().catch(() => ({}));
-        if (res.ok) { location.href = 'index.html'; return; }
+        if (res.ok) {
+          const code = (data.code || '').toString();
+          form.innerHTML =
+            '<h2>Company created</h2>' +
+            '<p class="login-sub">Share this join code with your team. On the ' +
+            'sign-in screen they tap <b>Join your team</b>, enter this code and ' +
+            'create their own password — then you approve them from the ' +
+            '<b>Team</b> page.</p>' +
+            '<div class="code-row" style="margin:.2rem 0 1rem">' +
+            '<span class="team-code" id="new-code">' +
+            code.replace(/</g, '&lt;') + '</span>' +
+            '<button type="button" class="btn btn-ghost btn-sm" id="copy-code">Copy</button>' +
+            '</div>' +
+            '<p class="login-sub">You can see this code again (or generate a new ' +
+            'one) any time on the Team page.</p>' +
+            '<button type="button" class="btn btn-primary btn-block" id="go-dash">' +
+            'Continue to dashboard</button>';
+          const copyBtn = document.getElementById('copy-code');
+          copyBtn.addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(code); copyBtn.textContent = 'Copied!'; }
+            catch { copyBtn.textContent = 'Copy failed'; }
+          });
+          document.getElementById('go-dash').addEventListener('click', () => {
+            location.href = 'index.html';
+          });
+          return;
+        }
         err.textContent = data.detail || (res.status === 409
           ? 'That email is already registered. Please sign in.'
           : 'Could not create the company. Please try again.');

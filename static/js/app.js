@@ -1235,6 +1235,7 @@
     html += '<section class="card"><h2 class="card-title">' + icon('i-users') +
       'Team join code</h2><div class="code-row">' +
       '<span class="team-code">' + esc(S.teamCode || '· · · · ·') + '</span>' +
+      '<button class="btn btn-ghost btn-sm" data-act="copy-code">Copy</button>' +
       '<button class="btn btn-ghost btn-sm" data-act="rotate-code">' +
       icon('i-sync') + 'Generate new code</button></div>' +
       '<p class="empty-line">Share this code with new members along with the app — ' +
@@ -1325,6 +1326,13 @@
       if (actEl.dataset.task) location.hash = '#/tasks/' + actEl.dataset.task;
     } else if (act === 'read-all') {
       await queueAction('mark_read', {});
+    } else if (act === 'copy-code') {
+      try {
+        await navigator.clipboard.writeText(S.teamCode || '');
+        toast('Join code copied', 'i-check-circle');
+      } catch {
+        toast('Could not copy — long-press the code to copy it', 'i-alert-triangle');
+      }
     } else if (act === 'rotate-code') {
       if (!confirm('Generate a new team code? The current code will stop working.')) return;
       try {
