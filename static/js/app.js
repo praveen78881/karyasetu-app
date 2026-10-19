@@ -1449,6 +1449,12 @@
   // ------------------------------------------------------------ boot
 
   async function boot() {
+    // Not signed in on this device yet → go straight to the sign-in screen.
+    // (Without this, first launch / the APK opens the dashboard and shows a
+    // confusing "can't load your workspace" screen before login.)
+    let hasToken = false;
+    try { hasToken = !!localStorage.getItem('ks_token'); } catch {}
+    if (!hasToken) { location.href = 'login.html'; return; }
     // Rehydrate from IndexedDB so the app is instantly useful offline.
     S.me = await KSDB.kvGet('me');
     S.users = await KSDB.getAll('users');
