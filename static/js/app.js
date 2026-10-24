@@ -359,14 +359,15 @@
   function updateSyncPill() {
     const pill = $('#sync-pill');
     if (!pill) return;
-    let cls, ic, label;
-    if (S.syncing) { cls = 'syncing'; ic = 'i-sync'; label = 'Syncing…'; }
-    else if (S.offline && S.outbox.length) { cls = 'pending'; ic = 'i-clock'; label = 'Pending sync'; }
-    else if (S.offline) { cls = 'offline'; ic = 'i-wifi-off'; label = 'Offline'; }
-    else if (S.justSynced) { cls = 'synced'; ic = 'i-cloud-check'; label = 'Synced'; }
-    else { cls = 'online'; ic = 'i-wifi'; label = 'Online'; }
-    pill.className = 'sync-pill ' + cls;
-    pill.innerHTML = icon(ic) + '<span>' + label + '</span>';
+    // Nothing is shown while online — sync and push just happen silently.
+    // The only badge is an offline warning telling the user to reconnect.
+    if (S.offline) {
+      pill.hidden = false;
+      pill.className = 'sync-pill offline';
+      pill.innerHTML = icon('i-wifi-off') + '<span>Connect to internet</span>';
+    } else {
+      pill.hidden = true;
+    }
   }
 
   // ------------------------------------------------------------ toasts
@@ -1233,15 +1234,22 @@
     if (!isMgr) { view.innerHTML = html; return; }
 
     html += '<section class="card"><h2 class="card-title">' + icon('i-users') +
-      'Team join code</h2><div class="code-row">' +
+      'Company key</h2><div class="code-row">' +
       '<span class="team-code">' + esc(S.teamCode || '· · · · ·') + '</span>' +
-      '<button class="btn btn-ghost btn-sm" data-act="copy-code">Copy</button>' +
-      '<button class="btn btn-ghost btn-sm" data-act="rotate-code">' +
-      icon('i-sync') + 'Generate new code</button></div>' +
-      '<p class="empty-line">Share this code with new members along with the app — ' +
+      '<button class="btn btn-ghost btn-sm" data-act="copy-code" type="button">Copy</button>' +
+      '</div>' +
+      '<p class="empty-line">Share this key with new members along with the app — ' +
       'they request an account from the sign-in page using it, and it stays ' +
-      'locked until you approve them under <b>Requests</b> above. ' +
-      'Generating a new code immediately disables the old one.</p></section>';
+      'locked until you approve them under <b>Requests</b> above.</p>' +
+      '<div class="form-row">' +
+      '<label class="field" style="flex:1 1 auto"><span>Set your own key</span>' +
+      '<input id="set-code-input" data-preserve maxlength="40" autocomplete="off" ' +
+      'placeholder="A word or number (4–24 characters)"></label>' +
+      '<button class="btn btn-primary btn-sm" data-act="set-code" type="button">' +
+      icon('i-check') + 'Set key</button></div>' +
+      '<button class="btn btn-ghost btn-sm" data-act="rotate-code" type="button">' +
+      icon('i-sync') + 'Generate a random key instead</button>' +
+      '<p class="empty-line">Changing the key immediately disables the old one.</p></section>';
 
     html += '<form id="add-member-form" class="card form">' +
       '<h2 class="card-title">' + icon('i-plus') + 'Add a team member</h2>' +
@@ -1333,8 +1341,30 @@
       } catch {
         toast('Could not copy — long-press the code to copy it', 'i-alert-triangle');
       }
+    } else if (act === 'set-code') {
+      if (S.offline) { toast('Changing the key needs an internet connection', 'i-wifi-off'); return; }
+      const inp = document.getElementById('set-code-input');
+      const key = ((inp && inp.value) || '').trim();
+      if (!key) { toast('Type a key first', 'i-alert-triangle'); return; }
+      if (!confirm('Set the company key to "' + key + '"? The old key will stop working.')) return;
+      try {
+        const res = await fetch('/api/team-code/rotate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-KS': '1' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          S.teamCode = data.team_code;
+          toast('Company key set: ' + data.team_code, 'i-check-circle');
+          renderView();
+        } else {
+          toast(data.detail || 'Could not set that key', 'i-alert-triangle');
+        }
+      } catch {
+        toast('Could not reach the server', 'i-wifi-off');
+      }
     } else if (act === 'rotate-code') {
-      if (!confirm('Generate a new team code? The current code will stop working.')) return;
+      if (!confirm('Generate a new random key? The current key will stop working.')) return;
       try {
         const res = await fetch('/api/team-code/rotate', {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'X-KS': '1' },
@@ -1342,10 +1372,10 @@
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           S.teamCode = data.team_code;
-          toast('New team code: ' + data.team_code, 'i-check-circle');
+          toast('New company key: ' + data.team_code, 'i-check-circle');
           renderView();
         } else {
-          toast('Could not generate a new code', 'i-alert-triangle');
+          toast('Could not generate a new key', 'i-alert-triangle');
         }
       } catch {
         toast('Could not reach the server', 'i-wifi-off');

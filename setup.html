@@ -58,6 +58,13 @@
           <span>Job title (optional)</span>
           <input name="title" maxlength="120" placeholder="e.g. Team Lead">
         </label>
+        <label class="field">
+          <span>Company key (optional)</span>
+          <input name="key" maxlength="40" autocomplete="off" autocapitalize="off"
+                 placeholder="Choose a key, or leave blank to auto-generate">
+          <small class="field-note">Employees must enter this key to request access.
+            4–24 letters or numbers. Leave blank and we'll generate one for you.</small>
+        </label>
         <p id="setup-error" class="login-error" role="alert" hidden></p>
         <button type="submit" class="btn btn-primary btn-block" id="setup-btn">Create company</button>
         <p class="login-alt">Already have an account?
@@ -84,7 +91,7 @@
           body: JSON.stringify({
             company: form.company.value, name: form.name.value,
             email: form.email.value, password: form.password.value,
-            title: form.title.value,
+            title: form.title.value, key: form.key.value,
           })
         });
         const data = await res.json().catch(() => ({}));
