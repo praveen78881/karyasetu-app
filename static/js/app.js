@@ -360,13 +360,15 @@
     const pill = $('#sync-pill');
     if (!pill) return;
     // Nothing is shown while online — sync and push just happen silently.
-    // The only badge is an offline warning telling the user to reconnect.
+    // Only an offline badge telling the user to reconnect. Toggle inline
+    // display (not the `hidden` attr): .sync-pill sets an explicit `display`
+    // that would otherwise override [hidden] and keep the pill visible.
     if (S.offline) {
-      pill.hidden = false;
+      pill.style.display = '';
       pill.className = 'sync-pill offline';
       pill.innerHTML = icon('i-wifi-off') + '<span>Connect to internet</span>';
     } else {
-      pill.hidden = true;
+      pill.style.display = 'none';
     }
   }
 

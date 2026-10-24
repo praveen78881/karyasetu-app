@@ -1,4 +1,4 @@
-const VERSION = 'ks-gh-v4';
+const VERSION = 'ks-gh-v5';
 const SHELL = ['index.html','login.html','setup.html','ks-shim.js',
  'static/css/app.css','static/css/fonts.css','static/js/db.js','static/js/app.js',
  'static/js/vendor/socket.io.min.js',
